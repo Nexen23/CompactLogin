@@ -2,4 +2,9 @@
 <resources>
 	<dimen name="anchor_force_center">-1000dp</dimen>
 	<dimen name="z_force_above">1000dp</dimen>
+
+	<dimen name="card_corner_radius">12dp</dimen>
+	<dimen name="card_elevation">6dp</dimen>
+
+	<dimen name="list_divider_offset">15dp</dimen>
 </resources>

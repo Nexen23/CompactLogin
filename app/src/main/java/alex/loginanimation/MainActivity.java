@@ -7,6 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.view.View;
 import android.view.ViewAnimationUtils;
+import android.view.animation.AccelerateInterpolator;
 import android.widget.Button;
 import android.widget.EditText;
 
@@ -26,6 +27,9 @@ public class MainActivity extends AppCompatActivity {
 	@BindView(R.id.cv_login)
 	CardView loginCardView;
 
+	@BindView(R.id.cv_register)
+	CardView registerCardView;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -37,15 +41,29 @@ public class MainActivity extends AppCompatActivity {
 
 	@OnClick(R.id.b_register)
 	void onRegisterClick() {
-		View animatingView = loginCardView;
-		int startRadius = registerButton.getWidth();
-		int endRadius = Math.max(loginCardView.getWidth(), loginCardView.getHeight());
-		int x = (int) (loginCardView.getWidth() * 0.9f);
-		int y = loginCardView.getHeight() / 2;
+		//final View animatingView = loginCardView;
+		final View animatingView = registerCardView;
 
+		int startRadius = registerButton.getWidth();
+		int endRadius = Math.max(animatingView.getWidth(), animatingView.getHeight());
+		int x = animatingView.getWidth() / 2;//(int) (loginCardView.getWidth() * 0.9f);
+		int y = animatingView.getHeight() / 2;
+		final int duration = 3000;
+
+		/*Animator animator = ViewAnimationUtils.createCircularReveal(animatingView, x, y, startRadius, endRadius);
+		animator
+				.setDuration(duration)
+				.setInterpolator(new AccelerateInterpolator());
+		animator
+				.start();*/
+
+		loginCardView.setElevation(0);
+		animatingView.setVisibility(View.VISIBLE);
 		Animator animator = ViewAnimationUtils.createCircularReveal(animatingView, x, y, startRadius, endRadius);
 		animator
-				.setDuration(1000)
+				.setDuration(duration)
+				.setInterpolator(new AccelerateInterpolator());
+		animator
 				.start();
 	}
 
