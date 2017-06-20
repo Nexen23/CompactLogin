@@ -114,6 +114,16 @@
 	</android.support.v7.widget.CardView>
 
 	<View
+		android:id="@+id/inner_highlight"
+		android:layout_width="4dp"
+		android:layout_height="28dp"
+		android:background="@drawable/divider_left"
+		android:translationX="1dp"
+		android:translationZ="@dimen/z_force_above"
+		app:layout_anchor="@id/tv_title"
+		app:layout_anchorGravity="center_vertical"/>
+
+	<View
 		android:id="@+id/inner_view"
 		android:layout_width="0dp"
 		android:layout_height="130dp"
@@ -137,15 +147,5 @@
 		app:layout_anchor="@id/inner_view"
 		app:layout_anchorGravity="bottom|center_horizontal"
 		app:srcCompat="@drawable/ic_add_white_32dp"/>
-
-	<View
-		android:id="@+id/inner_highlight"
-		android:layout_width="4dp"
-		android:layout_height="28dp"
-		android:background="@drawable/divider_left"
-		android:translationX="1dp"
-		android:translationZ="@dimen/z_force_above"
-		app:layout_anchor="@id/tv_title"
-		app:layout_anchorGravity="center_vertical"/>
 
 </android.support.design.widget.CoordinatorLayout>
