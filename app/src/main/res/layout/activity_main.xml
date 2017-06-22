@@ -42,8 +42,8 @@
 
 	<android.support.design.widget.FloatingActionButton
 		android:id="@+id/b_register"
-		android:layout_width="@dimen/fab_size"
-		android:layout_height="match_parent"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
 		android:layout_alignRight="@+id/cv_login"
 		android:layout_alignTop="@+id/cv_login"
 		android:layout_marginRight="@dimen/fab_center_size"
@@ -52,6 +52,7 @@
 		android:scaleType="center"
 		android:scrollbarAlwaysDrawHorizontalTrack="false"
 		app:elevation="8dp"
+		app:fabSize="normal"
 		app:srcCompat="@drawable/ic_add_white_32dp"/>
 
 </RelativeLayout>

@@ -37,12 +37,15 @@ public class MainActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		ButterKnife.bind(this);
-
-		//loginCardView.setClipToOutline(false); // controls anyway have not onClick received
 	}
 
 	@OnClick(R.id.b_register)
 	void onRegisterClick() {
+		moveLoginViewToBack();
+		showRegisterView();
+	}
+
+	private void showRegisterView() {
 		//final View animatingView = loginCardView;
 		final View animatingView = registerCardView;
 
@@ -67,6 +70,25 @@ public class MainActivity extends AppCompatActivity {
 				.setInterpolator(new AccelerateInterpolator());
 		animator
 				.start();
+	}
+
+	void moveLoginViewToBack() {
+		int widthDifference = loginCardView.getWidth() - backCardView.getWidth();
+
+		loginCardView.animate()
+				.z(0)
+				.y(backCardView.getTop())
+				.alphaBy(0.3f)
+				.scaleX(getNeededScaleX(loginCardView, widthDifference));
+
+		backCardView.animate()
+				.alphaBy(0.3f)
+				.yBy(backCardView.getTop() - loginCardView.getTop())
+				.scaleX(getNeededScaleX(backCardView, widthDifference));
+	}
+
+	float getNeededScaleX(View view, int deduct) {
+		return (float) (view.getWidth() - deduct) / view.getWidth();
 	}
 
 	void hideStatusBar() {
