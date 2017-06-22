@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.widget.CardView
+	android:id="@+id/cv_login"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:layout_gravity="center"
+	app:cardCornerRadius="@dimen/card_corner_radius"
+	app:cardElevation="@dimen/card_elevation"
+	app:cardPreventCornerOverlap="true"
+	tools:layout_height="350dp"
+	tools:layout_margin="30dp">
+
+	<View
+		android:id="@+id/inner_highlight"
+		style="@style/LeftHighlight"
+		android:layout_marginTop="31dp"
+		/>
+
+	<LinearLayout
+		android:id="@+id/l_login"
+		style="@style/InsetLayout"
+		android:clipToPadding="false"
+		android:divider="@drawable/divider_offset"
+		android:isScrollContainer="true"
+		android:orientation="vertical"
+		android:showDividers="middle">
+
+		<TextView
+			android:id="@+id/tv_title"
+			style="@style/Title"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginEnd="-24dp"
+			android:layout_marginStart="-24dp"
+			android:paddingEnd="24dp"
+			android:paddingStart="24dp"
+			android:text="Login"/>
+
+		<android.support.design.widget.TextInputLayout
+			android:id="@+id/til_username"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:hint="Username">
+
+			<EditText
+				android:id="@+id/et_username"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				/>
+
+		</android.support.design.widget.TextInputLayout>
+
+		<android.support.design.widget.TextInputLayout
+			android:id="@+id/til_password"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:hint="Password">
+
+			<EditText
+				android:id="@+id/et_password"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:inputType=""/>
+
+		</android.support.design.widget.TextInputLayout>
+
+		<Button
+			android:id="@+id/b_login"
+			style="@style/OkButton"
+			android:background="@drawable/bg_frame"
+			android:enabled="false"
+			android:text="GO"
+			android:textColor="@color/transparent_black"/>
+
+		<TextView
+			android:id="@+id/tv_forgot_password"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:gravity="center"
+			android:text="Forgot your password?"
+			android:textColor="@color/transparent_black"/>
+
+	</LinearLayout>
+
+</android.support.v7.widget.CardView>

@@ -24,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
 	EditText usernameEditText;
 	@BindView(R.id.et_password)
 	EditText passwordEditText;
+	@BindView(R.id.cv_back)
+	CardView backCardView;
 	@BindView(R.id.cv_login)
 	CardView loginCardView;
 

@@ -11,7 +11,7 @@
 	app:cardBackgroundColor="@color/colorAccent"
 	app:cardCornerRadius="@dimen/card_corner_radius"
 	tools:layout_height="350dp"
-	tools:layout_margin="15dp">
+	tools:layout_margin="30dp">
 
 
 	<RelativeLayout
@@ -47,7 +47,7 @@
 			android:layout_centerHorizontal="true"
 			android:layout_marginTop="16dp"
 			android:hint="Username"
-			android:textColorHint="@color/white">
+			android:theme="@style/AppTheme.Dark">
 
 			<EditText
 				android:id="@+id/et_username"
@@ -65,7 +65,7 @@
 			android:layout_below="@+id/til_username"
 			android:layout_marginTop="@dimen/list_divider_offset"
 			android:hint="Password"
-			android:textColorHint="@color/white">
+			android:theme="@style/AppTheme.Dark">
 
 			<EditText
 				android:id="@+id/et_password"
@@ -84,7 +84,7 @@
 			android:layout_below="@+id/til_password"
 			android:layout_marginTop="@dimen/list_divider_offset"
 			android:hint="Repeat Password"
-			android:textColorHint="@color/white">
+			android:theme="@style/AppTheme.Dark">
 
 			<EditText
 				android:id="@+id/et_repeat_password"
