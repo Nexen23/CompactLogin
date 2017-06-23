@@ -112,13 +112,14 @@
 			android:layout_marginTop="0dp"
 			android:text="NEXT"/>
 
-		<ImageView
+		<ImageButton
 			android:id="@+id/b_close"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
-			app:srcCompat="@drawable/ic_close_white_32dp"
 			android:layout_above="@+id/til_username"
-			android:layout_alignParentEnd="true"/>
+			android:layout_alignParentEnd="true"
+			android:background="@null"
+			app:srcCompat="@drawable/ic_close_white_32dp"/>
 
 	</RelativeLayout>
 
