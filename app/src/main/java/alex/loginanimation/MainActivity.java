@@ -12,12 +12,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.view.View;
 import android.view.ViewAnimationUtils;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import butterknife.BindDimen;
@@ -45,10 +47,12 @@ public class MainActivity extends AppCompatActivity {
 
 	@BindView(R.id.cv_register)
 	CardView registerCardView;
+	@BindView(R.id.l_register)
+	RelativeLayout registerLayout;
 
 	@BindDimen(R.dimen.z_force_above)
 	@Dimension int zForceAbove;
-	final long duration = 1000;
+	final long duration = 800;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -64,32 +68,46 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void showRegisterView() {
-		final View animatingView = registerCardView;
+		final ViewGroup animatingView = registerCardView;
 
 		int startRadius = (int) (registerButton.getWidth() / 2f);
 		int endRadius = (int) Math.ceil(Math.hypot(animatingView.getWidth(), animatingView.getHeight()));
-		final PointF pCenter = new PointF(animatingView.getWidth() * 0.8f, animatingView.getHeight() * 0.4f);
+		final PointF pRevealCenter = new PointF(animatingView.getWidth() * 0.8f, animatingView.getHeight() * 0.4f);
 
 		animatingView.setVisibility(View.VISIBLE);
 		animatingView.setZ(zForceAbove);
 
-		float x = animatingView.getX() + pCenter.x - startRadius,
-				y = animatingView.getY() + pCenter.y - startRadius;
+		float x = animatingView.getX() + pRevealCenter.x - startRadius,
+				y = animatingView.getY() + pRevealCenter.y - startRadius;
 		float bx = registerButton.getX(),
 				by = registerButton.getY();
 
-		float dx = bx - x, dy = by - y;
+		final float dx = bx - x, dy = by - y;
 
 		//registerButton.setVisibility(View.INVISIBLE);
 
-		PointF pTarget = getXY(animatingView),
+		final PointF pTarget = getXY(animatingView),
 				pFab = getXY(animatingView);
 		pFab.offset(dx, dy);
 		setXY(animatingView, pFab);
 
-		Animator xyAnimator = new CircleAnimator(getXY(animatingView), pTarget, 90)
+
+		ValueAnimator xyAnimator = new CircleAnimator(pFab, pTarget, 90)
 				.onViewPosition(animatingView)
 				.setDuration((long) (duration * 0.5f));
+		
+		xyAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				PointF point = (PointF) animation.getAnimatedValue();
+				float xToTarget = pTarget.x - point.x,
+						yToTarget = pTarget.y - point.y;
+				registerLayout.setX(xToTarget);
+				registerLayout.setY(yToTarget);
+			}
+		});
+
+		final PointF pLayoutIdle = getXY(registerLayout);
 
 		xyAnimator.setInterpolator(new AccelerateInterpolator());
 		xyAnimator.start();
@@ -97,34 +115,46 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
 		Animator animator = ViewAnimationUtils
-				.createCircularReveal(animatingView, ((int) pCenter.x), ((int) pCenter.y), startRadius, endRadius);
+				.createCircularReveal(animatingView, ((int) pRevealCenter.x), ((int) pRevealCenter.y), startRadius, endRadius);
 		animator
 				.setDuration(duration)
-				.setInterpolator(new AccelerateInterpolator(1.7f));
+				.setInterpolator(new AccelerateInterpolator(1.9f));
 		animator.start();
 
 
-		moveCloseButton(pCenter);
+		moveCloseButton(pRevealCenter, pLayoutIdle);
 	}
 
-	void moveCloseButton(final PointF pStartCenter) {
+	void moveCloseButton(final PointF pRevealCenter, final PointF pLayoutIdle) {
 		final PointF
 				pTarget = getXY(closeButton),
-				pStart = centerToLeftTop(closeButton, pStartCenter);
+				pStart = centerToLeftTop(closeButton, pRevealCenter);
 
 		Animator rotateIconAnimator = ObjectAnimator.ofFloat(closeButton, View.ROTATION, 45, 90);
 		rotateIconAnimator
 				.setDuration((long) (duration * 0.9f))
 				.setInterpolator(new AccelerateDecelerateInterpolator());
 
-		ValueAnimator fullAnimatorSet = new CircleAnimator(pStart, pTarget, -120)
+		ValueAnimator circleAnimator = new CircleAnimator(pStart, pTarget, -120)
 				.onViewPosition(closeButton)
-				.setRadiusInterpolator(new AccelerateInterpolator(2.3f))
+				.setRadiusInterpolator(new AccelerateInterpolator(2.2f))
 				.setDuration(duration);
+		circleAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				PointF xy = getXY(closeButton);
+				xy.offset(
+						pLayoutIdle.x - registerLayout.getX(),
+						pLayoutIdle.y - registerLayout.getY());
+				setXY(closeButton, xy);
+			}
+		});
 
 		AnimatorSet resultingAnimator = new AnimatorSet();
-		resultingAnimator.playTogether(fullAnimatorSet, rotateIconAnimator);
+		resultingAnimator.playTogether(circleAnimator, rotateIconAnimator);
 
 		resultingAnimator.start();
 	}

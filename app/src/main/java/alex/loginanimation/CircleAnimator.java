@@ -14,6 +14,7 @@ public class CircleAnimator extends ValueAnimator {
 	final float maxRadius;
 	final float minAngle, maxAngle;
 	Interpolator radiusInterpolator = new LinearInterpolator();
+	private float currentAnimatedFraction = -1;
 
 	public CircleAnimator(final PointF pStart, final PointF pTarget, float fromAngle) {
 		this.pStart = new PointF(pStart.x, pStart.y);
@@ -56,7 +57,9 @@ public class CircleAnimator extends ValueAnimator {
 	}
 
 	void updateCurrentPoint() {
-		float value = getAnimatedFraction();
+		if (currentAnimatedFraction == getAnimatedFraction()) return;
+
+		float value = currentAnimatedFraction = getAnimatedFraction();
 		float radius = maxRadius * radiusInterpolator.getInterpolation(value);
 		float radianAngle = (float) Math.toRadians(value * (maxAngle - minAngle) + minAngle);
 		pCurrent.set(
