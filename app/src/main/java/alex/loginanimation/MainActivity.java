@@ -1,6 +1,7 @@
 package alex.loginanimation;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
@@ -52,7 +53,11 @@ public class MainActivity extends AppCompatActivity {
 
 	@BindDimen(R.dimen.z_force_above)
 	@Dimension int zForceAbove;
+	@BindDimen(R.dimen.card_elevation)
+	@Dimension int loginCardElevation;
+
 	final long duration = 800;
+	final float alphaBack = 0.9f;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -61,8 +66,63 @@ public class MainActivity extends AppCompatActivity {
 		ButterKnife.bind(this);
 	}
 
+	@OnClick(R.id.b_close)
+	void onCloseRegistrationClick() {
+		moveLoginViewToFront();
+
+		/*PointF pStart = getXY(closeButton),
+				pTarget = getXY(registerButton);
+		pTarget.offset(-registerCardView.getX(), -registerCardView.getY());
+		pTarget.offset(registerButton.getWidth() / 2 - closeButton.getWidth() / 2,
+				registerButton.getHeight() / 2 - closeButton.getHeight() / 2);
+
+		ValueAnimator circleAnimator = new CircleAnimator(pStart, pTarget, 0)//-120)
+				.onViewPosition(closeButton)
+				.counterClockwise()
+				.setRadiusInterpolator(new AccelerateInterpolator(1 / 2.2f))
+				.setDuration(duration);
+		circleAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				*//*PointF xy = getXY(closeButton);
+				xy.offset(
+						pLayoutIdle.x - registerLayout.getX(),
+						pLayoutIdle.y - registerLayout.getY());
+				setXY(closeButton, xy);*//*
+			}
+		});
+		circleAnimator.start();*/
+
+
+		final ViewGroup animatingView = registerCardView;
+
+		int endRadius = (int) (registerButton.getWidth() / 2f);
+		int startRadius = (int) Math.ceil(Math.hypot(animatingView.getWidth(), animatingView.getHeight()));
+		final PointF pRevealCenter = new PointF(animatingView.getWidth() / 2f, animatingView.getHeight() / 2f);
+
+		Animator unrevealAnimator = ViewAnimationUtils
+				.createCircularReveal(animatingView, ((int) pRevealCenter.x), ((int) pRevealCenter.y), startRadius, endRadius);
+		unrevealAnimator
+				.setDuration(duration)
+				.setInterpolator(new DecelerateInterpolator(1.9f));
+
+		ObjectAnimator fadeContentAnimator = ObjectAnimator.ofFloat(registerLayout, View.ALPHA, 1f, 0f);
+		fadeContentAnimator.setInterpolator(new AccelerateInterpolator(0.2f));
+
+		AnimatorSet animatorSet = new AnimatorSet();
+		animatorSet.playTogether(unrevealAnimator, fadeContentAnimator);
+		animatorSet.addListener(new AnimatorListenerAdapter() {
+			@Override
+			public void onAnimationEnd(Animator animation) {
+				animatingView.setVisibility(View.INVISIBLE);
+			}
+		});
+		animatorSet.start();
+	}
+
 	@OnClick(R.id.b_register)
 	void onRegisterClick() {
+		registerLayout.setAlpha(1f);
 		moveLoginViewToBack();
 		showRegisterView();
 	}
@@ -181,6 +241,7 @@ public class MainActivity extends AppCompatActivity {
 		loginCardView.animate()
 				.setDuration(duration / 3)
 				.setInterpolator(new DecelerateInterpolator())
+				.alpha(alphaBack)
 				.z(0)
 				.y(backCardView.getTop())
 				.scaleX(getNeededScaleX(loginCardView, widthDifference));
@@ -190,6 +251,24 @@ public class MainActivity extends AppCompatActivity {
 				.setInterpolator(new DecelerateInterpolator())
 				.yBy(backCardView.getTop() - loginCardView.getTop())
 				.scaleX(getNeededScaleX(backCardView, widthDifference));
+	}
+
+	void moveLoginViewToFront() {
+		int widthDifference = registerCardView.getWidth() - loginCardView.getWidth();
+
+		backCardView.animate()
+				.setDuration(duration / 3)
+				.setInterpolator(new AccelerateInterpolator())
+				.y(loginCardView.getY())
+				.scaleX(getNeededScaleX(backCardView, widthDifference));
+
+		loginCardView.animate()
+				.setDuration(duration / 3)
+				.setInterpolator(new AccelerateInterpolator())
+				.alpha(1f)
+				.z(loginCardElevation)
+				.y(registerCardView.getY())
+				.scaleX(getNeededScaleX(loginCardView, widthDifference));
 	}
 
 	float getNeededScaleX(View view, int deduct) {
