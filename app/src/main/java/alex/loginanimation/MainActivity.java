@@ -3,12 +3,14 @@ package alex.loginanimation;
 import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.graphics.PointF;
 import android.os.Bundle;
 import android.support.annotation.Dimension;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
+import android.util.Log;
 import android.util.Property;
 import android.view.View;
 import android.view.ViewAnimationUtils;
@@ -24,10 +26,6 @@ import butterknife.BindDimen;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-
-import static android.view.View.ROTATION;
-import static android.view.View.X;
-import static android.view.View.Y;
 
 public class MainActivity extends AppCompatActivity {
 	@BindView(R.id.b_register)
@@ -65,10 +63,31 @@ public class MainActivity extends AppCompatActivity {
 	@OnClick(R.id.b_register)
 	void onRegisterClick() {
 
-		//ValueAnimator animator = new
+		((DrawingView) loginCardView).animateCircle(duration);
 
-		moveLoginViewToBack();
-		showRegisterView();
+		/*RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) registerButton.getLayoutParams();
+		int[] rules = params.getRules();
+		for (int i = 0; i < rules.length; ++i) {
+			params.removeRule(rules[i]);
+		}
+		closeButton.setLayoutParams(params);*/
+
+		PointF xy = getXY(registerButton);
+		//xy.offset(registerButton.getWidth() / 2, registerButton.getHeight() / 2);
+		PointF target = new PointF(xy.x - 200, xy.y - 50);
+		ValueAnimator animator = new CircleAnimator(xy, target, -45).setDuration(duration);
+		animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				PointF animatedValue = (PointF) animation.getAnimatedValue();
+				Log.e("TEST", animatedValue.toString());
+				setXY(registerButton, animatedValue);
+			}
+		});
+		animator.start();
+
+		//moveLoginViewToBack();
+		//showRegisterView();
 	}
 
 	private void showRegisterView() {
@@ -124,7 +143,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 		closeButton.setRotation(45);
-		Animator rotateIconAnimator = ObjectAnimator.ofFloat(closeButton, ROTATION, 0, 45);
+		Animator rotateIconAnimator = ObjectAnimator.ofFloat(closeButton, View.ROTATION, 0, 45);
 		Animator moveBackAnimator = getCurveXYAnimator(closeButton, pStart, pStartBack, false);
 		Animator moveToLeftAnimator = getCurveXYAnimator(closeButton, pStartBack, pStartLeft, false);
 		Animator moveToTargetAnimator = getCurveXYAnimator(closeButton, pStartLeft, pTarget, false);
@@ -244,8 +263,8 @@ public class MainActivity extends AppCompatActivity {
 			yInterpolator = temp;
 		}
 
-		Animator xAnimator = getTranslationAnimator(view, xInterpolator, X, pFrom.x, pTo.x);
-		Animator yAnimator = getTranslationAnimator(view, yInterpolator, Y, pFrom.y, pTo.y);
+		Animator xAnimator = getTranslationAnimator(view, xInterpolator, View.X, pFrom.x, pTo.x);
+		Animator yAnimator = getTranslationAnimator(view, yInterpolator, View.Y, pFrom.y, pTo.y);
 		animatorSet.playTogether(xAnimator, yAnimator);
 		return animatorSet;
 	}
