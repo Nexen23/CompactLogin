@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<alex.loginanimation.DrawingView
+<android.support.v7.widget.CardView
 	android:id="@+id/cv_login"
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -85,4 +85,4 @@
 
 	</LinearLayout>
 
-</alex.loginanimation.DrawingView>
+</android.support.v7.widget.CardView>
