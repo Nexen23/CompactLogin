@@ -5,6 +5,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.graphics.PointF;
 import android.os.Bundle;
 import android.support.annotation.Dimension;
@@ -14,6 +16,7 @@ import android.support.v7.widget.CardView;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
@@ -51,12 +54,12 @@ public class MainActivity extends AppCompatActivity {
 	@BindView(R.id.l_register)
 	RelativeLayout registerLayout;
 
-	@BindDimen(R.dimen.z_force_above)
-	@Dimension int zForceAbove;
 	@BindDimen(R.dimen.card_elevation)
-	@Dimension int loginCardElevation;
+	@Dimension int topCardElevation;
+	@BindDimen(R.dimen.fab_elevation)
+	@Dimension int fabElevation;
 
-	final long duration = 800;
+	long duration = 800;
 	final float alphaBack = 0.9f;
 
 	@Override
@@ -70,33 +73,10 @@ public class MainActivity extends AppCompatActivity {
 	void onCloseRegistrationClick() {
 		moveLoginViewToFront();
 
-		/*PointF pStart = getXY(closeButton),
-				pTarget = getXY(registerButton);
-		pTarget.offset(-registerCardView.getX(), -registerCardView.getY());
-		pTarget.offset(registerButton.getWidth() / 2 - closeButton.getWidth() / 2,
-				registerButton.getHeight() / 2 - closeButton.getHeight() / 2);
-
-		ValueAnimator circleAnimator = new CircleAnimator(pStart, pTarget, 0)//-120)
-				.onViewPosition(closeButton)
-				.counterClockwise()
-				.setRadiusInterpolator(new AccelerateInterpolator(1 / 2.2f))
-				.setDuration(duration);
-		circleAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-			@Override
-			public void onAnimationUpdate(ValueAnimator animation) {
-				*//*PointF xy = getXY(closeButton);
-				xy.offset(
-						pLayoutIdle.x - registerLayout.getX(),
-						pLayoutIdle.y - registerLayout.getY());
-				setXY(closeButton, xy);*//*
-			}
-		});
-		circleAnimator.start();*/
-
 
 		final ViewGroup animatingView = registerCardView;
 
-		int endRadius = (int) (registerButton.getWidth() / 2f);
+		final int endRadius = (int) (registerButton.getWidth() / 2f);
 		int startRadius = (int) Math.ceil(Math.hypot(animatingView.getWidth(), animatingView.getHeight()));
 		final PointF pRevealCenter = new PointF(animatingView.getWidth() / 2f, animatingView.getHeight() / 2f);
 
@@ -109,9 +89,9 @@ public class MainActivity extends AppCompatActivity {
 			@Override
 			public void onAnimationEnd(Animator animation) {
 				animatingView.setVisibility(View.INVISIBLE);
-				registerButton.setVisibility(View.VISIBLE);
 			}
 		});
+
 
 
 
@@ -125,29 +105,89 @@ public class MainActivity extends AppCompatActivity {
 
 		CircleAnimator moveToFabAnimator = new CircleAnimator(pStart, pEnd, 45)
 				.onViewPosition(registerCardView)
+				.counterClockwise()
+				.setDuration((long) (duration * 0.6f));
+
+
+
+
+
+
+
+		final PointF pFrom = getXY(closeButton), pTo = new PointF();
+		pFrom.offset(closeButton.getWidth() / 2, closeButton.getHeight() / 2); // center
+		pFrom.offset(-registerButton.getWidth() / 2, -registerButton.getHeight() / 2);
+		pFrom.offset(registerCardView.getX(), registerCardView.getY());
+		pTo.offset(
+				pRevealCenter.x - endRadius + registerCardView.getX(),
+				pRevealCenter.y - endRadius + registerCardView.getY());
+		registerButton.setVisibility(View.VISIBLE);
+		closeButton.setVisibility(View.INVISIBLE);
+
+
+
+
+		final ViewOutlineProvider savedOutlineProvider = registerButton.getOutlineProvider();
+		final ColorStateList savedBackgroundTintList = registerButton.getBackgroundTintList();
+		registerButton.setOutlineProvider(null);
+		registerButton.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
+
+
+
+		CircleAnimator moveCloseToCenterAnimator = new CircleAnimator(pFrom, pTo, 180)
+				.onViewPosition(registerButton)
 				.counterClockwise();
-		moveToFabAnimator.setDuration((long) (duration * 0.6f));
+		moveCloseToCenterAnimator.setDuration((long) (duration * 0.4f));
+		moveCloseToCenterAnimator.setInterpolator(new AccelerateInterpolator(0.4f));
 
-		AnimatorSet fadeMoveAS = new AnimatorSet();
-		fadeMoveAS.playSequentially(fadeContentAnimator, moveToFabAnimator);
+		ObjectAnimator rotateCloseAnimator = ObjectAnimator.ofFloat(registerButton, View.ROTATION, 45, 0);
+		rotateCloseAnimator.setDuration(duration);
+		rotateCloseAnimator.setInterpolator(new DecelerateInterpolator());
 
 
 
-		AnimatorSet unrevealAnimatorSet = new AnimatorSet();
-		unrevealAnimatorSet.playTogether(unrevealAnimator, fadeMoveAS);
+		moveToFabAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				PointF point = (PointF) animation.getAnimatedValue();
+				point.offset(pRevealCenter.x - endRadius, pRevealCenter.y - endRadius);
+				setXY(registerButton, point);
+			}
+		});
 
+
+
+
+		AnimatorSet fadeMoveAS = sequentially(
+				together(fadeContentAnimator, moveCloseToCenterAnimator),
+				moveToFabAnimator);
+
+		AnimatorSet unrevealAnimatorSet = together(unrevealAnimator, rotateCloseAnimator, fadeMoveAS);
+		unrevealAnimator.addListener(new AnimatorListenerAdapter() {
+			@Override
+			public void onAnimationEnd(Animator animation) {
+				registerButton.setBackgroundTintList(savedBackgroundTintList);
+				registerButton.setOutlineProvider(savedOutlineProvider);
+				registerButton.animate().z(fabElevation);
+			}
+		});
 		unrevealAnimatorSet.start();
 	}
 
 	@OnClick(R.id.b_register)
 	void onRegisterClick() {
+		long prevDuration = duration;
+		//duration = 0;
 		registerLayout.setAlpha(1f);
 		moveLoginViewToBack();
 		showRegisterView();
+
+		duration = prevDuration;
 	}
 
 	private void showRegisterView() {
 		setXY(registerCardView, getXY(loginCardView));
+		closeButton.setVisibility(View.VISIBLE);
 
 		final ViewGroup animatingView = registerCardView;
 
@@ -156,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
 		final PointF pRevealCenter = new PointF(animatingView.getWidth() * 0.8f, animatingView.getHeight() * 0.4f);
 
 		animatingView.setVisibility(View.VISIBLE);
-		animatingView.setZ(zForceAbove);
+		animatingView.setZ(topCardElevation);
 
 		float x = animatingView.getX() + pRevealCenter.x - startRadius,
 				y = animatingView.getY() + pRevealCenter.y - startRadius;
@@ -259,8 +299,9 @@ public class MainActivity extends AppCompatActivity {
 	void moveLoginViewToBack() {
 		int widthDifference = loginCardView.getWidth() - backCardView.getWidth();
 
+		long duration = (long) (this.duration * 0.5f);
 		loginCardView.animate()
-				.setDuration(duration / 3)
+				.setDuration(duration)
 				.setInterpolator(new DecelerateInterpolator())
 				.alpha(alphaBack)
 				.z(0)
@@ -268,7 +309,7 @@ public class MainActivity extends AppCompatActivity {
 				.scaleX(getNeededScaleX(loginCardView, widthDifference));
 
 		backCardView.animate()
-				.setDuration(duration / 3)
+				.setDuration(duration)
 				.setInterpolator(new DecelerateInterpolator())
 				.yBy(backCardView.getTop() - loginCardView.getTop())
 				.scaleX(getNeededScaleX(backCardView, widthDifference));
@@ -277,17 +318,18 @@ public class MainActivity extends AppCompatActivity {
 	void moveLoginViewToFront() {
 		int widthDifference = registerCardView.getWidth() - loginCardView.getWidth();
 
+		long duration = (long) (this.duration * 0.25f);
 		backCardView.animate()
-				.setDuration(duration / 3)
+				.setDuration(duration)
 				.setInterpolator(new AccelerateInterpolator())
 				.y(loginCardView.getY())
 				.scaleX(getNeededScaleX(backCardView, widthDifference));
 
 		loginCardView.animate()
-				.setDuration(duration / 3)
+				.setDuration(duration)
 				.setInterpolator(new AccelerateInterpolator())
 				.alpha(1f)
-				.z(loginCardElevation)
+				.z(topCardElevation)
 				.y(registerCardView.getY())
 				.scaleX(getNeededScaleX(loginCardView, widthDifference));
 	}
@@ -322,4 +364,16 @@ public class MainActivity extends AppCompatActivity {
 		animatorSet.playTogether(xAnimator, yAnimator);
 		return animatorSet;
 	}*/
+
+	AnimatorSet together(Animator... animators) {
+		AnimatorSet animatorSet = new AnimatorSet();
+		animatorSet.playTogether(animators);
+		return animatorSet;
+	}
+
+	AnimatorSet sequentially(Animator... animators) {
+		AnimatorSet animatorSet = new AnimatorSet();
+		animatorSet.playSequentially(animators);
+		return animatorSet;
+	}
 }

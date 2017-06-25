@@ -51,6 +51,11 @@ public class CircleAnimator extends ValueAnimator {
 		return new PointF(pCurrent.x, pCurrent.y);
 	}
 
+	@Override
+	public CircleAnimator setDuration(long duration) {
+		return (CircleAnimator) super.setDuration(duration);
+	}
+
 	/*@Override
 	public float getAnimatedFraction() {
 		return isCounterClockwise ?
