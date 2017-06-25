@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
 	long duration = 800;
 	final float alphaBack = 0.9f;
+	boolean disableRegisterAnim = false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
 		int startRadius = (int) Math.ceil(Math.hypot(animatingView.getWidth(), animatingView.getHeight()));
 		final PointF pRevealCenter = new PointF(animatingView.getWidth() / 2f, animatingView.getHeight() / 2f);
 
+
 		Animator unrevealAnimator = ViewAnimationUtils
 				.createCircularReveal(animatingView, ((int) pRevealCenter.x), ((int) pRevealCenter.y), startRadius, endRadius);
 		unrevealAnimator
@@ -91,7 +93,6 @@ public class MainActivity extends AppCompatActivity {
 				animatingView.setVisibility(View.INVISIBLE);
 			}
 		});
-
 
 
 
@@ -177,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
 	@OnClick(R.id.b_register)
 	void onRegisterClick() {
 		long prevDuration = duration;
-		//duration = 0;
+		if (disableRegisterAnim) duration = 0;
 		registerLayout.setAlpha(1f);
 		moveLoginViewToBack();
 		showRegisterView();

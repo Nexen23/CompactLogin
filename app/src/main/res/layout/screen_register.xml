@@ -8,8 +8,6 @@
 	android:layout_height="match_parent"
 	android:layout_gravity="center"
 	android:elevation="@dimen/card_elevation"
-	android:clipChildren="false"
-	android:clipToPadding="false"
 	app:cardBackgroundColor="@color/colorAccent"
 	app:cardCornerRadius="@dimen/card_corner_radius"
 	app:maxWidth="@dimen/card_max_width"
@@ -22,7 +20,6 @@
 		style="@style/InsetLayout"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:clipChildren="false"
 		android:clipToPadding="false">
 
 		<TextView
