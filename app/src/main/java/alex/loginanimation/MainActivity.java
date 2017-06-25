@@ -219,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
 		setXY(animatingView, pFab);
 
 
-		ValueAnimator xyAnimator = new CircleAnimator(pFab, pTarget, 90)
+		ValueAnimator xyAnimator = new CircleAnimator(pFab, pTarget, 0)
 				.onViewPosition(animatingView)
 				.setDuration((long) (duration * 0.5f));
 		
