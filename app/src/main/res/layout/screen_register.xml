@@ -121,7 +121,8 @@
 			android:layout_above="@+id/til_username"
 			android:layout_alignParentEnd="true"
 			android:background="@null"
-			app:srcCompat="@drawable/ic_close_white_32dp"/>
+			android:rotation="45"
+			app:srcCompat="@drawable/ic_add_white_32dp"/>
 
 	</RelativeLayout>
 

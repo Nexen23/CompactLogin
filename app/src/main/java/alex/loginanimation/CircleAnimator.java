@@ -12,10 +12,10 @@ public class CircleAnimator extends ValueAnimator {
 	View targetView;
 	final PointF pCurrent = new PointF(), pStart, pTarget;
 	final float maxRadius;
-	final float minAngle, maxAngle;
+	float minAngle, maxAngle;
 	Interpolator radiusInterpolator = new LinearInterpolator();
 	private float currentAnimatedFraction = -1;
-	//private boolean isCounterClockwise = false;
+	private boolean isCounterClockwise = false;
 
 	public CircleAnimator(final PointF pStart, final PointF pTarget, float fromAngle) {
 		this.pStart = new PointF(pStart.x, pStart.y);
@@ -25,7 +25,11 @@ public class CircleAnimator extends ValueAnimator {
 		maxAngle = //(float) (Math.toDegrees(Math.atan((pTarget.y - pStart.y) / (pTarget.x - pStart.x)))) + 180f;
 				//(float) Math.toDegrees(Math.acos((pTarget.x - pStart.x) / maxRadius)) + 180;  //225;
 				//double t =
-				(float) (Math.toDegrees(Math.atan2(pTarget.y - pStart.y, pTarget.x - pStart.x)) + 360f) % 360f;
+				(float) Math.toDegrees(Math.atan2(pTarget.y - pStart.y, pTarget.x - pStart.x));
+
+		maxAngle = (maxAngle + 360f) % 360f;
+		if (maxAngle < minAngle) maxAngle += 360f;
+
 		setFloatValues(0f, 1f);
 		setInterpolator(new DecelerateInterpolator());
 
@@ -47,6 +51,13 @@ public class CircleAnimator extends ValueAnimator {
 		return new PointF(pCurrent.x, pCurrent.y);
 	}
 
+	/*@Override
+	public float getAnimatedFraction() {
+		return isCounterClockwise ?
+				1 - super.getAnimatedFraction() :
+				super.getAnimatedFraction();
+	}*/
+
 	public CircleAnimator onViewPosition(final View targetView) {
 		this.targetView = targetView;
 		return this;
@@ -57,22 +68,30 @@ public class CircleAnimator extends ValueAnimator {
 		return this;
 	}
 
-	/*public CircleAnimator counterClockwise() {
+	public CircleAnimator counterClockwise() {
+		if (isCounterClockwise) throw new IllegalStateException("already counterclockwise");
 		isCounterClockwise = true;
 		//setFloatValues(1f, 0f);
+
+		/*PointF p = pStart;
+		pStart = pTarget;
+		pTarget = p;*/
+
+		maxAngle -= 360f;
+
+		/*float temp = minAngle;
+		minAngle = maxAngle;
+		maxAngle = temp;*/
 		return this;
-	}*/
+	}
 
 	void updateCurrentPoint() {
 		if (currentAnimatedFraction == getAnimatedFraction()) return;
 
 		float value = currentAnimatedFraction = getAnimatedFraction();
 		float radius = maxRadius * radiusInterpolator.getInterpolation(value);
-		float radianAngle = (float) Math.toRadians(value * (maxAngle - minAngle) + minAngle);
-
-		/*if (isCounterClockwise) {
-			radianAngle = (float) Math.toRadians(maxAngle - value * (maxAngle - minAngle));
-		}*/
+		float angleDistance = maxAngle - minAngle;
+		float radianAngle = (float) Math.toRadians(value * angleDistance + minAngle);
 
 		pCurrent.set(
 				pStart.x + radius * ((float) Math.cos(radianAngle)),

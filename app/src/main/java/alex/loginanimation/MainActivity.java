@@ -105,19 +105,38 @@ public class MainActivity extends AppCompatActivity {
 		unrevealAnimator
 				.setDuration(duration)
 				.setInterpolator(new DecelerateInterpolator(1.9f));
-
-		ObjectAnimator fadeContentAnimator = ObjectAnimator.ofFloat(registerLayout, View.ALPHA, 1f, 0f);
-		fadeContentAnimator.setInterpolator(new AccelerateInterpolator(0.2f));
-
-		AnimatorSet animatorSet = new AnimatorSet();
-		animatorSet.playTogether(unrevealAnimator, fadeContentAnimator);
-		animatorSet.addListener(new AnimatorListenerAdapter() {
+		unrevealAnimator.addListener(new AnimatorListenerAdapter() {
 			@Override
 			public void onAnimationEnd(Animator animation) {
 				animatingView.setVisibility(View.INVISIBLE);
+				registerButton.setVisibility(View.VISIBLE);
 			}
 		});
-		animatorSet.start();
+
+
+
+		ObjectAnimator fadeContentAnimator = ObjectAnimator.ofFloat(registerLayout, View.ALPHA, 1f, 0f);
+		fadeContentAnimator.setDuration((long) (duration * 0.4f));
+		fadeContentAnimator.setInterpolator(new AccelerateInterpolator(0.2f));
+
+
+		PointF pEnd = getXY(registerButton), pStart = getXY(registerCardView);
+		pEnd.offset(-pRevealCenter.x + endRadius, -pRevealCenter.y + endRadius);
+
+		CircleAnimator moveToFabAnimator = new CircleAnimator(pStart, pEnd, 45)
+				.onViewPosition(registerCardView)
+				.counterClockwise();
+		moveToFabAnimator.setDuration((long) (duration * 0.6f));
+
+		AnimatorSet fadeMoveAS = new AnimatorSet();
+		fadeMoveAS.playSequentially(fadeContentAnimator, moveToFabAnimator);
+
+
+
+		AnimatorSet unrevealAnimatorSet = new AnimatorSet();
+		unrevealAnimatorSet.playTogether(unrevealAnimator, fadeMoveAS);
+
+		unrevealAnimatorSet.start();
 	}
 
 	@OnClick(R.id.b_register)
@@ -128,6 +147,8 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	private void showRegisterView() {
+		setXY(registerCardView, getXY(loginCardView));
+
 		final ViewGroup animatingView = registerCardView;
 
 		int startRadius = (int) (registerButton.getWidth() / 2f);
@@ -144,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
 
 		final float dx = bx - x, dy = by - y;
 
-		//registerButton.setVisibility(View.INVISIBLE);
+		registerButton.setVisibility(View.INVISIBLE);
 
 		final PointF pTarget = getXY(animatingView),
 				pFab = getXY(animatingView);
@@ -193,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
 				pTarget = getXY(closeButton),
 				pStart = centerToLeftTop(closeButton, pRevealCenter);
 
-		Animator rotateIconAnimator = ObjectAnimator.ofFloat(closeButton, View.ROTATION, 45, 90);
+		Animator rotateIconAnimator = ObjectAnimator.ofFloat(closeButton, View.ROTATION, 0, 45);
 		rotateIconAnimator
 				.setDuration((long) (duration * 0.9f))
 				.setInterpolator(new AccelerateDecelerateInterpolator());
