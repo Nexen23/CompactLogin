@@ -68,6 +68,9 @@ public class MainActivity extends AppCompatActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		ButterKnife.bind(this);
+
+		registerCardView.setPreventCornerOverlap(false);
+		loginCardView.setPreventCornerOverlap(false);
 	}
 
 	@OnClick(R.id.b_close)
