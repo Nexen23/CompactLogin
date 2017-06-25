@@ -8,12 +8,12 @@
 	android:layout_height="match_parent"
 	android:layout_gravity="center"
 	android:elevation="@dimen/card_elevation"
+	android:clipChildren="false"
 	app:cardBackgroundColor="@color/colorAccent"
 	app:cardCornerRadius="@dimen/card_corner_radius"
 	app:maxWidth="@dimen/card_max_width"
 	tools:layout_height="350dp"
 	tools:layout_margin="30dp">
-
 
 	<RelativeLayout
 		android:id="@+id/l_register"
@@ -95,21 +95,14 @@
 
 		</android.support.design.widget.TextInputLayout>
 
-		<View
-			android:id="@+id/divider"
-			android:layout_width="match_parent"
-			android:layout_height="@dimen/list_divider_offset"
-			android:layout_below="@+id/til_repeat_password"
-			/>
-
 		<Button
 			android:id="@+id/b_ok"
 			style="@style/OkButton.Dark"
 			android:layout_width="match_parent"
 			android:layout_alignParentBottom="false"
 			android:layout_alignParentStart="true"
-			android:layout_below="@+id/divider"
-			android:layout_marginTop="0dp"
+			android:layout_below="@+id/til_repeat_password"
+			android:layout_marginTop="@dimen/list_divider_offset"
 			android:text="NEXT"/>
 
 		<ImageButton

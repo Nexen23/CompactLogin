@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
 	@BindDimen(R.dimen.fab_elevation)
 	@Dimension int fabElevation;
 
-	long duration = 800;
+	long duration = 600;
 	final float alphaBack = 0.9f;
 	boolean disableRegisterAnim = false;
 
@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
 
 	@OnClick(R.id.b_close)
 	void onCloseRegistrationClick() {
+		registerCardView.setClipChildren(true); // HACK: clip children & circular reveal clip confront each other
 		moveLoginViewToFront();
 
 
@@ -180,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
 
 	@OnClick(R.id.b_register)
 	void onRegisterClick() {
+		registerCardView.setClipChildren(false);
 		long prevDuration = duration;
 		if (disableRegisterAnim) duration = 0;
 		registerLayout.setAlpha(1f);

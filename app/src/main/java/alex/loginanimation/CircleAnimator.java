@@ -22,10 +22,7 @@ public class CircleAnimator extends ValueAnimator {
 		this.pTarget = new PointF(pTarget.x, pTarget.y);
 		maxRadius = (float) Math.hypot(pStart.x - pTarget.x, pStart.y - pTarget.y);
 		minAngle = fromAngle;
-		maxAngle = //(float) (Math.toDegrees(Math.atan((pTarget.y - pStart.y) / (pTarget.x - pStart.x)))) + 180f;
-				//(float) Math.toDegrees(Math.acos((pTarget.x - pStart.x) / maxRadius)) + 180;  //225;
-				//double t =
-				(float) Math.toDegrees(Math.atan2(pTarget.y - pStart.y, pTarget.x - pStart.x));
+		maxAngle = (float) Math.toDegrees(Math.atan2(pTarget.y - pStart.y, pTarget.x - pStart.x));
 
 		maxAngle = (maxAngle + 360f) % 360f;
 		if (maxAngle < minAngle) maxAngle += 360f;
@@ -56,13 +53,6 @@ public class CircleAnimator extends ValueAnimator {
 		return (CircleAnimator) super.setDuration(duration);
 	}
 
-	/*@Override
-	public float getAnimatedFraction() {
-		return isCounterClockwise ?
-				1 - super.getAnimatedFraction() :
-				super.getAnimatedFraction();
-	}*/
-
 	public CircleAnimator onViewPosition(final View targetView) {
 		this.targetView = targetView;
 		return this;
@@ -76,17 +66,7 @@ public class CircleAnimator extends ValueAnimator {
 	public CircleAnimator counterClockwise() {
 		if (isCounterClockwise) throw new IllegalStateException("already counterclockwise");
 		isCounterClockwise = true;
-		//setFloatValues(1f, 0f);
-
-		/*PointF p = pStart;
-		pStart = pTarget;
-		pTarget = p;*/
-
 		maxAngle -= 360f;
-
-		/*float temp = minAngle;
-		minAngle = maxAngle;
-		maxAngle = temp;*/
 		return this;
 	}
 
