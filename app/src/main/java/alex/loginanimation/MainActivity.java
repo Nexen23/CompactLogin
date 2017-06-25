@@ -108,10 +108,17 @@ public class MainActivity extends AppCompatActivity {
 		PointF pEnd = getXY(registerButton), pStart = getXY(registerCardView);
 		pEnd.offset(-pRevealCenter.x + endRadius, -pRevealCenter.y + endRadius);
 
+		registerButton.setClickable(false);
 		CircleAnimator moveToFabAnimator = new CircleAnimator(pStart, pEnd, 45)
 				.onViewPosition(registerCardView)
 				.counterClockwise()
 				.setDuration((long) (duration * 0.6f));
+		moveToFabAnimator.addListener(new AnimatorListenerAdapter() {
+			@Override
+			public void onAnimationEnd(Animator animation) {
+				registerButton.setClickable(true);
+			}
+		});
 
 
 
@@ -211,7 +218,6 @@ public class MainActivity extends AppCompatActivity {
 
 		final float dx = bx - x, dy = by - y;
 
-		registerButton.setVisibility(View.INVISIBLE);
 
 		final PointF pTarget = getXY(animatingView),
 				pFab = getXY(animatingView);
@@ -219,9 +225,17 @@ public class MainActivity extends AppCompatActivity {
 		setXY(animatingView, pFab);
 
 
+		registerButton.setVisibility(View.INVISIBLE);
+		closeButton.setClickable(false);
 		ValueAnimator xyAnimator = new CircleAnimator(pFab, pTarget, 0)
 				.onViewPosition(animatingView)
 				.setDuration((long) (duration * 0.5f));
+		xyAnimator.addListener(new AnimatorListenerAdapter() {
+			@Override
+			public void onAnimationEnd(Animator animation) {
+				closeButton.setClickable(true);
+			}
+		});
 		
 		xyAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
 			@Override
