@@ -1,4 +1,4 @@
-package alex.loginanimation;
+package alex.loginanimation.widget;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -6,17 +6,22 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PointF;
 import android.support.v7.widget.CardView;
 import android.util.AttributeSet;
 
+import alex.loginanimation.anim.CircleAnimator;
+import alex.loginanimation.misc.Point2d;
 
+
+/**
+ * For testing purposes
+ */
 public class DrawingView extends CardView {
 	Path path = new Path();
 	ValueAnimator animator;
 	Paint paint = new Paint();
 
-	PointF pTarget;
+	Point2d pTarget;
 	Paint targetPaint = new Paint();
 
 	public DrawingView(Context context) {
@@ -50,8 +55,8 @@ public class DrawingView extends CardView {
 		paint.setStyle(Paint.Style.STROKE);
 		paint.setStrokeWidth(4f);
 
-		final PointF pStart = new PointF(getWidth() / 2f, getHeight() / 2f);
-		pTarget = new PointF(pStart.x - 120, pStart.y - 400);
+		final Point2d pStart = new Point2d(getWidth() / 2f, getHeight() / 2f);
+		pTarget = new Point2d(pStart.x - 120, pStart.y - 400);
 		if (animator != null) animator.cancel();
 		path.reset();
 		path.moveTo(pStart.x, pStart.y);
@@ -62,7 +67,7 @@ public class DrawingView extends CardView {
 		/*animator = ValueAnimator.ofFloat(0f, 1f).setDuration(duration);
 		animator.setInterpolator(new DecelerateInterpolator());*/
 		animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-			/*PointF pCurrent = new PointF();
+			/*Point2d pCurrent = new Point2d();
 			float maxRadius = (float) Math.hypot(pStart.x - pTarget.x, pStart.y - pTarget.y);
 			float minAngle = -45,
 					maxAngle = //(float) Math.toDegrees(Math.acos((pTarget.x - pStart.x) / maxRadius)) + 180;  //225;
@@ -78,7 +83,7 @@ public class DrawingView extends CardView {
 				pCurrent.set(
 						pStart.x + radius * ((float) Math.cos(radianAngle)),
 						pStart.y + radius * ((float) Math.sin(radianAngle)));*/
-				PointF pCurrent = (PointF) animation.getAnimatedValue();
+				Point2d pCurrent = (Point2d) animation.getAnimatedValue();
 				path.lineTo(pCurrent.x, pCurrent.y);
 				invalidate();
 			}

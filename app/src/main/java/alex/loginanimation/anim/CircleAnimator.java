@@ -1,16 +1,17 @@
-package alex.loginanimation;
+package alex.loginanimation.anim;
 
 import android.animation.ValueAnimator;
-import android.graphics.PointF;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 
+import alex.loginanimation.misc.Point2d;
+
 
 public class CircleAnimator extends ValueAnimator {
 	final float PI2 = (float) (Math.PI * 2f);
-	final PointF pCurrent = new PointF(), pStart = new PointF(), pTarget = new PointF();
+	final Point2d pCurrent = new Point2d(), pStart = new Point2d(), pTarget = new Point2d();
 	final float maxRadius;
 	float fromRadianAngle, toRadianAngle, radianAnglesDiff;
 	boolean isCounterClockwise = false;
@@ -19,7 +20,7 @@ public class CircleAnimator extends ValueAnimator {
 	Interpolator radiusInterpolator;
 	float currentAnimatedFraction = -1;
 
-	public CircleAnimator(final PointF pStart, final PointF pTarget, float fromAngle) {
+	public CircleAnimator(final Point2d pStart, final Point2d pTarget, float fromAngle) {
 		this.pStart.set(pStart);
 		this.pTarget.set(pTarget);
 		maxRadius = (float) Math.hypot(pStart.x - pTarget.x, pStart.y - pTarget.y);
@@ -36,9 +37,9 @@ public class CircleAnimator extends ValueAnimator {
 
 
 	@Override
-	public PointF getAnimatedValue() {
+	public Point2d getAnimatedValue() {
 		updateCurrentPoint();
-		return new PointF(pCurrent.x, pCurrent.y);
+		return new Point2d(pCurrent);
 	}
 
 	@Override
@@ -54,8 +55,7 @@ public class CircleAnimator extends ValueAnimator {
 			public void onAnimationUpdate(ValueAnimator animation) {
 				if (targetView != null) {
 					updateCurrentPoint();
-					targetView.setX(pCurrent.x);
-					targetView.setY(pCurrent.y);
+					pCurrent.place(targetView);
 				}
 			}
 		});

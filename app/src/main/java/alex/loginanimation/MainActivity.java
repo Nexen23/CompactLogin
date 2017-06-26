@@ -5,63 +5,70 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.PointF;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Dimension;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.view.View;
 import android.view.ViewAnimationUtils;
 import android.view.ViewGroup;
-import android.view.ViewOutlineProvider;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 
+import alex.loginanimation.anim.CircleAnimator;
+import alex.loginanimation.misc.FabBackground;
+import alex.loginanimation.misc.Point2d;
+import alex.loginanimation.util.ViewUtil;
 import butterknife.BindDimen;
+import butterknife.BindInt;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
-public class MainActivity extends AppCompatActivity {
+import static alex.loginanimation.util.AnimUtil.sequentially;
+import static alex.loginanimation.util.AnimUtil.together;
+
+public class MainActivity extends AppCompatActivity implements View.OnLayoutChangeListener {
+	@BindView(R.id.l_root)
+	ViewGroup rootLayout;
+
 	@BindView(R.id.b_register)
 	FloatingActionButton registerButton;
-	@BindView(R.id.b_login)
-	Button loginButton;
 	@BindView(R.id.b_close)
 	ImageButton closeButton;
-	@BindView(R.id.et_username)
-	EditText usernameEditText;
-	@BindView(R.id.et_password)
-	EditText passwordEditText;
-	@BindView(R.id.cv_back)
-	CardView backCardView;
-	@BindView(R.id.cv_login)
-	CardView loginCardView;
-	@BindView(R.id.tv_title)
-	TextView titleTextView;
 
+	@BindView(R.id.cv_back)
+	CardView backScreen;
+	@BindView(R.id.cv_login)
+	CardView loginScreen;
 	@BindView(R.id.cv_register)
-	CardView registerCardView;
+	CardView registerScreen;
+
 	@BindView(R.id.l_register)
-	RelativeLayout registerLayout;
+	RelativeLayout registerContent;
 
 	@BindDimen(R.dimen.card_elevation)
-	@Dimension int topCardElevation;
+	@Dimension int frontScreenElevation;
 	@BindDimen(R.dimen.fab_elevation)
-	@Dimension int fabElevation;
+	@Dimension int registerButtonElevation;
 
-	long duration = 600;
-	final float alphaBack = 0.9f;
-	boolean disableRegisterAnim = false;
+	@BindInt(R.integer.animation_duration_open_card)
+	int duration;
+
+	private Point2d pRevealCenter = new Point2d(), pUnrevealCenter = new Point2d(),
+			pRegisterScreen = new Point2d(), pRegisterContent = new Point2d(),
+			pRegisterButton = new Point2d(),
+			pMoveRegisterScreenFrom = new Point2d();
+	private float revealStartRadius, revealEndRadius;
+	private float frontBackScreensYDiff;
+	private FabBackground fabBackground;
+	private AnimatorSet showRegisterScreenAnimatorSet, hideRegisterScreenAnimatorSet;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -69,50 +76,250 @@ public class MainActivity extends AppCompatActivity {
 		setContentView(R.layout.activity_main);
 		ButterKnife.bind(this);
 
-		registerCardView.setPreventCornerOverlap(false);
-		loginCardView.setPreventCornerOverlap(false);
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+			registerScreen.setPreventCornerOverlap(false);
+			loginScreen.setPreventCornerOverlap(false);
+		}
+
+		rootLayout.addOnLayoutChangeListener(this);
 	}
 
-	@OnClick(R.id.b_close)
-	void onCloseRegistrationClick() {
-		registerCardView.setClipChildren(true); // HACK: clip children & circular reveal clip confront each other
-		moveLoginViewToFront();
+	@Override
+	public void onLayoutChange(View v,
+	                           int left, int top, int right, int bottom,
+	                           int oldLeft, int oldTop, int oldRight, int oldBottom) {
+		setupAnimatorsData();
+		setupShowRegisterScreenAnimators();
+		setupShowLoginScreenAnimators();
+
+		rootLayout.removeOnLayoutChangeListener(this);
+	}
+
+	private void setupAnimatorsData() {
+		fabBackground = new FabBackground(registerButton);
+
+		frontBackScreensYDiff = loginScreen.getY() - backScreen.getY();
+
+		pRegisterScreen.set(registerScreen);
+		pRegisterContent.set(registerContent);
+		pRegisterButton.set(registerButton);
 
 
-		final ViewGroup animatingView = registerCardView;
+		revealStartRadius = (int) Math.ceil(registerButton.getWidth() / 2f);
+		revealEndRadius = (int) Math.ceil(Math.hypot(registerScreen.getWidth(), registerScreen.getHeight()));
+		pRevealCenter.set(registerScreen.getWidth() * 0.8f, registerScreen.getHeight() * 0.4f);
+		pUnrevealCenter.plusHalfSize(registerScreen);
 
-		final int endRadius = (int) (registerButton.getWidth() / 2f);
-		int startRadius = (int) Math.ceil(Math.hypot(animatingView.getWidth(), animatingView.getHeight()));
-		final PointF pRevealCenter = new PointF(animatingView.getWidth() / 2f, animatingView.getHeight() / 2f);
+
+		pMoveRegisterScreenFrom.set(pRegisterScreen)
+				.plus(pRevealCenter)
+				.minus(revealStartRadius);
 
 
-		Animator unrevealAnimator = ViewAnimationUtils
-				.createCircularReveal(animatingView, ((int) pRevealCenter.x), ((int) pRevealCenter.y), startRadius, endRadius);
-		unrevealAnimator
+		Point2d diff = new Point2d(pRegisterButton).minus(pMoveRegisterScreenFrom);
+		pMoveRegisterScreenFrom.set(pRegisterScreen).plus(diff);
+	}
+
+	//region Show register screen
+	void setupShowRegisterScreenAnimators() {
+		showRegisterScreenAnimatorSet = together(
+				getMoveRegisterScreenFromFabAnimator(),
+				getMoveButtonFromRevealCenterAnimator(),
+				getMorphPlusToCrossAnimator());
+	}
+
+	@OnClick(R.id.b_register)
+	void onRegisterClick() {
+		hideLoginScreen();
+		showRegisterScreen();
+	}
+
+	private void hideLoginScreen() {
+		int widthDifference = loginScreen.getWidth() - backScreen.getWidth();
+
+		DecelerateInterpolator interpolator = new DecelerateInterpolator();
+		long duration = (long) (this.duration * 0.5f);
+
+		loginScreen.animate()
 				.setDuration(duration)
-				.setInterpolator(new DecelerateInterpolator(1.9f));
-		unrevealAnimator.addListener(new AnimatorListenerAdapter() {
+				.setInterpolator(interpolator)
+				.alpha(0.9f)
+				.z(0)
+				.y(pRegisterScreen.y - frontBackScreensYDiff)
+				.scaleX(ViewUtil.GetScaleX(loginScreen, widthDifference));
+
+		backScreen.animate()
+				.setDuration(duration)
+				.setInterpolator(interpolator)
+				.y(pRegisterScreen.y - frontBackScreensYDiff * 2)
+				.scaleX(ViewUtil.GetScaleX(backScreen, widthDifference));
+	}
+
+	private void showRegisterScreen() {
+		setupRegisterScreenValues();
+		showRegisterScreenAnimatorSet.start();
+		getRevealRegisterScreenAnimator().start();
+	}
+
+	private void setupRegisterScreenValues() {
+		registerScreen.setClipChildren(false);
+		Point2d.of(loginScreen).place(registerScreen);
+		registerScreen.setVisibility(View.VISIBLE);
+		registerScreen.setZ(frontScreenElevation);
+		registerContent.setAlpha(1f);
+
+		pMoveRegisterScreenFrom.place(registerScreen);
+		registerButton.setVisibility(View.INVISIBLE);
+		closeButton.setVisibility(View.VISIBLE);
+		closeButton.setClickable(false);
+	}
+
+	/**
+	 * Reveal animator can't be restarted. Result must not be saved in instances
+	 */
+	private Animator getRevealRegisterScreenAnimator() {
+		Animator revealAnimator = ViewAnimationUtils
+				.createCircularReveal(registerScreen,
+						((int) pRevealCenter.x), ((int) pRevealCenter.y),
+						revealStartRadius, revealEndRadius)
+				.setDuration(duration);
+
+		revealAnimator.setInterpolator(new AccelerateInterpolator(1.9f));
+		return revealAnimator;
+	}
+
+	private Animator getMoveRegisterScreenFromFabAnimator() {
+		final View screen = registerScreen, content = registerContent, newButton = closeButton;
+		final Point2d pFrom = pMoveRegisterScreenFrom, pTo = pRegisterScreen;
+
+		ValueAnimator moveAnimator = new CircleAnimator(pFrom, pTo, 0)
+				.onViewPosition(screen)
+				.setDuration((long) (duration * 0.5f));
+
+		ValueAnimator.AnimatorUpdateListener stabilizeContentListener = new ValueAnimator.AnimatorUpdateListener() {
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				Point2d point = (Point2d) animation.getAnimatedValue();
+				float xToTarget = pTo.x - point.x,
+						yToTarget = pTo.y - point.y;
+				content.setX(xToTarget);
+				content.setY(yToTarget);
+			}
+		};
+
+		moveAnimator.addUpdateListener(stabilizeContentListener);
+		moveAnimator.addListener(new AnimatorListenerAdapter() {
 			@Override
 			public void onAnimationEnd(Animator animation) {
-				animatingView.setVisibility(View.INVISIBLE);
+				newButton.setClickable(true);
 			}
 		});
 
+		moveAnimator.setInterpolator(new AccelerateInterpolator());
+		return moveAnimator;
+	}
 
+	private Animator getMoveButtonFromRevealCenterAnimator() {
+		final Point2d
+				pTo = Point2d.of(closeButton),
+				pFrom = new Point2d(pRevealCenter).minusHalfSize(closeButton);
 
-		ObjectAnimator fadeContentAnimator = ObjectAnimator.ofFloat(registerLayout, View.ALPHA, 1f, 0f);
-		fadeContentAnimator.setDuration((long) (duration * 0.4f));
-		fadeContentAnimator.setInterpolator(new AccelerateInterpolator(0.2f));
+		ValueAnimator moveAnimator = new CircleAnimator(pFrom, pTo, -120)
+				.onViewPosition(closeButton)
+				.setRadiusInterpolator(new AccelerateInterpolator(2.2f))
+				.setDuration(duration);
+		moveAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				Point2d.of(closeButton)
+						.plus(pRegisterContent).minus(registerContent)
+						.place(closeButton);
+			}
+		});
 
+		return moveAnimator;
+	}
 
-		PointF pEnd = getXY(registerButton), pStart = getXY(registerCardView);
-		pEnd.offset(-pRevealCenter.x + endRadius, -pRevealCenter.y + endRadius);
+	private Animator getMorphPlusToCrossAnimator() {
+		Animator morphAnimator = ObjectAnimator.ofFloat(closeButton, View.ROTATION, 0, 45);
+		morphAnimator.setDuration((long) (duration * 0.9f))
+				.setInterpolator(new AccelerateDecelerateInterpolator());
+		return morphAnimator;
+	}
+	//endregion
 
-		registerButton.setClickable(false);
+	//region Show login screen
+	void setupShowLoginScreenAnimators() {
+		hideRegisterScreenAnimatorSet = together(
+				getMorphCrossToPlusAnimator(),
+				sequentially(
+						together(
+								getFadeRegisterContentAnimator(),
+								getMoveButtonToCenterAnimator()),
+						getMoveRegisterScreenToFabAnimator())
+		);
+	}
+
+	@OnClick(R.id.b_close)
+	void onCloseClick() {
+		showLoginScreen();
+		hideRegisterScreen();
+	}
+
+	private void hideRegisterScreen() {
+		setupLoginScreenValues();
+		hideRegisterScreenAnimatorSet.start();
+		getUnrevealRegisterScreenAnimator().start();
+	}
+
+	@NonNull
+	private Animator getMoveButtonToCenterAnimator() {
+		final float unrevealEndRadius = revealStartRadius;
+
+		final Point2d pFrom = Point2d.of(closeButton)
+				.plusHalfSize(closeButton)
+				.minusHalfSize(registerButton)
+				.plus(registerScreen);
+
+		final Point2d pTo = new Point2d(pUnrevealCenter)
+				.minus(unrevealEndRadius)
+				.plus(registerScreen);
+
+		CircleAnimator moveCloseToCenterAnimator = new CircleAnimator(pFrom, pTo, 180)
+				.onViewPosition(registerButton)
+				.counterClockwise();
+		moveCloseToCenterAnimator.setDuration((long) (duration * 0.4f));
+		moveCloseToCenterAnimator.setInterpolator(new AccelerateInterpolator(0.4f));
+		return moveCloseToCenterAnimator;
+	}
+
+	@NonNull
+	private Animator getMorphCrossToPlusAnimator() {
+		ObjectAnimator rotateCloseAnimator = ObjectAnimator.ofFloat(registerButton, View.ROTATION, 45, 0);
+		rotateCloseAnimator.setDuration(duration);
+		rotateCloseAnimator.setInterpolator(new DecelerateInterpolator());
+		return rotateCloseAnimator;
+	}
+
+	@NonNull
+	private CircleAnimator getMoveRegisterScreenToFabAnimator() {
+		final float unrevealEndRadius = revealStartRadius;
+		Point2d pStart = Point2d.of(registerScreen),
+				pEnd = Point2d.of(registerButton).minus(pUnrevealCenter).plus(unrevealEndRadius);
+
 		CircleAnimator moveToFabAnimator = new CircleAnimator(pStart, pEnd, 45)
-				.onViewPosition(registerCardView)
+				.onViewPosition(registerScreen)
 				.counterClockwise()
 				.setDuration((long) (duration * 0.6f));
+
+		moveToFabAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+			@Override
+			public void onAnimationUpdate(ValueAnimator animation) {
+				Point2d point = (Point2d) animation.getAnimatedValue();
+				point.plus(pUnrevealCenter).minus(unrevealEndRadius).place(registerButton);
+			}
+		});
+
 		moveToFabAnimator.addListener(new AnimatorListenerAdapter() {
 			@Override
 			public void onAnimationEnd(Animator animation) {
@@ -120,280 +327,64 @@ public class MainActivity extends AppCompatActivity {
 			}
 		});
 
+		return moveToFabAnimator;
+	}
 
+	@NonNull
+	private Animator getFadeRegisterContentAnimator() {
+		ObjectAnimator fadeContentAnimator = ObjectAnimator.ofFloat(registerContent, View.ALPHA, 1f, 0f);
+		fadeContentAnimator.setDuration((long) (duration * 0.4f));
+		fadeContentAnimator.setInterpolator(new AccelerateInterpolator(0.2f));
+		return fadeContentAnimator;
+	}
 
+	/**
+	 * Reveal animator can't be restarted. Result must not be saved in instances
+	 */
+	private Animator getUnrevealRegisterScreenAnimator() {
+		Animator unrevealAnimator = ViewAnimationUtils
+				.createCircularReveal(registerScreen, ((int) pUnrevealCenter.x), ((int) pUnrevealCenter.y),
+						revealEndRadius, revealStartRadius);
+		unrevealAnimator
+				.setDuration(duration)
+				.setInterpolator(new DecelerateInterpolator(1.9f));
 
-
-
-
-		final PointF pFrom = getXY(closeButton), pTo = new PointF();
-		pFrom.offset(closeButton.getWidth() / 2, closeButton.getHeight() / 2); // center
-		pFrom.offset(-registerButton.getWidth() / 2, -registerButton.getHeight() / 2);
-		pFrom.offset(registerCardView.getX(), registerCardView.getY());
-		pTo.offset(
-				pRevealCenter.x - endRadius + registerCardView.getX(),
-				pRevealCenter.y - endRadius + registerCardView.getY());
-		registerButton.setVisibility(View.VISIBLE);
-		closeButton.setVisibility(View.INVISIBLE);
-
-
-
-
-		final ViewOutlineProvider savedOutlineProvider = registerButton.getOutlineProvider();
-		final ColorStateList savedBackgroundTintList = registerButton.getBackgroundTintList();
-		registerButton.setOutlineProvider(null);
-		registerButton.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
-
-
-
-		CircleAnimator moveCloseToCenterAnimator = new CircleAnimator(pFrom, pTo, 180)
-				.onViewPosition(registerButton)
-				.counterClockwise();
-		moveCloseToCenterAnimator.setDuration((long) (duration * 0.4f));
-		moveCloseToCenterAnimator.setInterpolator(new AccelerateInterpolator(0.4f));
-
-		ObjectAnimator rotateCloseAnimator = ObjectAnimator.ofFloat(registerButton, View.ROTATION, 45, 0);
-		rotateCloseAnimator.setDuration(duration);
-		rotateCloseAnimator.setInterpolator(new DecelerateInterpolator());
-
-
-
-		moveToFabAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-			@Override
-			public void onAnimationUpdate(ValueAnimator animation) {
-				PointF point = (PointF) animation.getAnimatedValue();
-				point.offset(pRevealCenter.x - endRadius, pRevealCenter.y - endRadius);
-				setXY(registerButton, point);
-			}
-		});
-
-
-
-
-		AnimatorSet fadeMoveAS = sequentially(
-				together(fadeContentAnimator, moveCloseToCenterAnimator),
-				moveToFabAnimator);
-
-		AnimatorSet unrevealAnimatorSet = together(unrevealAnimator, rotateCloseAnimator, fadeMoveAS);
 		unrevealAnimator.addListener(new AnimatorListenerAdapter() {
 			@Override
 			public void onAnimationEnd(Animator animation) {
-				registerButton.setBackgroundTintList(savedBackgroundTintList);
-				registerButton.setOutlineProvider(savedOutlineProvider);
-				registerButton.animate().z(fabElevation);
+				registerScreen.setVisibility(View.INVISIBLE);
+				registerButton.animate().z(registerButtonElevation);
+				fabBackground.restore();
 			}
 		});
-		unrevealAnimatorSet.start();
+		return unrevealAnimator;
 	}
 
-	@OnClick(R.id.b_register)
-	void onRegisterClick() {
-		registerCardView.setClipChildren(false);
-		long prevDuration = duration;
-		if (disableRegisterAnim) duration = 0;
-		registerLayout.setAlpha(1f);
-		moveLoginViewToBack();
-		showRegisterView();
-
-		duration = prevDuration;
-	}
-
-	private void showRegisterView() {
-		setXY(registerCardView, getXY(loginCardView));
-		closeButton.setVisibility(View.VISIBLE);
-
-		final ViewGroup animatingView = registerCardView;
-
-		int startRadius = (int) (registerButton.getWidth() / 2f);
-		int endRadius = (int) Math.ceil(Math.hypot(animatingView.getWidth(), animatingView.getHeight()));
-		final PointF pRevealCenter = new PointF(animatingView.getWidth() * 0.8f, animatingView.getHeight() * 0.4f);
-
-		animatingView.setVisibility(View.VISIBLE);
-		animatingView.setZ(topCardElevation);
-
-		float x = animatingView.getX() + pRevealCenter.x - startRadius,
-				y = animatingView.getY() + pRevealCenter.y - startRadius;
-		float bx = registerButton.getX(),
-				by = registerButton.getY();
-
-		final float dx = bx - x, dy = by - y;
-
-
-		final PointF pTarget = getXY(animatingView),
-				pFab = getXY(animatingView);
-		pFab.offset(dx, dy);
-		setXY(animatingView, pFab);
-
-
-		registerButton.setVisibility(View.INVISIBLE);
-		closeButton.setClickable(false);
-		ValueAnimator xyAnimator = new CircleAnimator(pFab, pTarget, 0)
-				.onViewPosition(animatingView)
-				.setDuration((long) (duration * 0.5f));
-		xyAnimator.addListener(new AnimatorListenerAdapter() {
-			@Override
-			public void onAnimationEnd(Animator animation) {
-				closeButton.setClickable(true);
-			}
-		});
-		
-		xyAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-			@Override
-			public void onAnimationUpdate(ValueAnimator animation) {
-				PointF point = (PointF) animation.getAnimatedValue();
-				float xToTarget = pTarget.x - point.x,
-						yToTarget = pTarget.y - point.y;
-				registerLayout.setX(xToTarget);
-				registerLayout.setY(yToTarget);
-			}
-		});
-
-		final PointF pLayoutIdle = getXY(registerLayout);
-
-		xyAnimator.setInterpolator(new AccelerateInterpolator());
-		xyAnimator.start();
-
-
-
-
-
-
-		Animator animator = ViewAnimationUtils
-				.createCircularReveal(animatingView, ((int) pRevealCenter.x), ((int) pRevealCenter.y), startRadius, endRadius);
-		animator
-				.setDuration(duration)
-				.setInterpolator(new AccelerateInterpolator(1.9f));
-		animator.start();
-
-
-		moveCloseButton(pRevealCenter, pLayoutIdle);
-	}
-
-	void moveCloseButton(final PointF pRevealCenter, final PointF pLayoutIdle) {
-		final PointF
-				pTarget = getXY(closeButton),
-				pStart = centerToLeftTop(closeButton, pRevealCenter);
-
-		Animator rotateIconAnimator = ObjectAnimator.ofFloat(closeButton, View.ROTATION, 0, 45);
-		rotateIconAnimator
-				.setDuration((long) (duration * 0.9f))
-				.setInterpolator(new AccelerateDecelerateInterpolator());
-
-		ValueAnimator circleAnimator = new CircleAnimator(pStart, pTarget, -120)
-				.onViewPosition(closeButton)
-				.setRadiusInterpolator(new AccelerateInterpolator(2.2f))
-				.setDuration(duration);
-		circleAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-			@Override
-			public void onAnimationUpdate(ValueAnimator animation) {
-				PointF xy = getXY(closeButton);
-				xy.offset(
-						pLayoutIdle.x - registerLayout.getX(),
-						pLayoutIdle.y - registerLayout.getY());
-				setXY(closeButton, xy);
-			}
-		});
-
-		AnimatorSet resultingAnimator = new AnimatorSet();
-		resultingAnimator.playTogether(circleAnimator, rotateIconAnimator);
-
-		resultingAnimator.start();
-	}
-
-	void setXY(View view, PointF p) {
-		view.setX(p.x);
-		view.setY(p.y);
-	}
-
-	PointF getXY(View view) {
-		return new PointF(view.getX(), view.getY());
-	}
-
-	PointF centerToLeftTop(View view, PointF p) {
-		PointF pLeftTop = new PointF(p.x, p.y);
-		pLeftTop.offset(-view.getWidth() / 2, -view.getHeight() / 2);
-		setXY(view, pLeftTop);
-		return pLeftTop;
-	}
-
-	void moveLoginViewToBack() {
-		int widthDifference = loginCardView.getWidth() - backCardView.getWidth();
-
-		long duration = (long) (this.duration * 0.5f);
-		loginCardView.animate()
-				.setDuration(duration)
-				.setInterpolator(new DecelerateInterpolator())
-				.alpha(alphaBack)
-				.z(0)
-				.y(backCardView.getTop())
-				.scaleX(getNeededScaleX(loginCardView, widthDifference));
-
-		backCardView.animate()
-				.setDuration(duration)
-				.setInterpolator(new DecelerateInterpolator())
-				.yBy(backCardView.getTop() - loginCardView.getTop())
-				.scaleX(getNeededScaleX(backCardView, widthDifference));
-	}
-
-	void moveLoginViewToFront() {
-		int widthDifference = registerCardView.getWidth() - loginCardView.getWidth();
-
+	void showLoginScreen() {
 		long duration = (long) (this.duration * 0.25f);
-		backCardView.animate()
-				.setDuration(duration)
-				.setInterpolator(new AccelerateInterpolator())
-				.y(loginCardView.getY())
-				.scaleX(getNeededScaleX(backCardView, widthDifference));
+		AccelerateInterpolator interpolator = new AccelerateInterpolator();
 
-		loginCardView.animate()
+		backScreen.animate()
 				.setDuration(duration)
-				.setInterpolator(new AccelerateInterpolator())
+				.setInterpolator(interpolator)
+				.y(loginScreen.getY())
+				.scaleX(1f);
+
+		loginScreen.animate()
+				.setDuration(duration)
+				.setInterpolator(interpolator)
 				.alpha(1f)
-				.z(topCardElevation)
-				.y(registerCardView.getY())
-				.scaleX(getNeededScaleX(loginCardView, widthDifference));
+				.z(frontScreenElevation)
+				.y(pRegisterScreen.y)
+				.scaleX(1f);
 	}
 
-	float getNeededScaleX(View view, int deduct) {
-		return (float) (view.getWidth() - deduct) / view.getWidth();
+	private void setupLoginScreenValues() {
+		registerScreen.setClipChildren(true); // HACK: clip children & circular reveal clip confront each other. See: https://stackoverflow.com/questions/44748155/circular-reveal-shows-black-background
+		registerButton.setClickable(false);
+		registerButton.setVisibility(View.VISIBLE);
+		closeButton.setVisibility(View.INVISIBLE);
+		fabBackground.clear();
 	}
-
-	/*private Animator getTranslationAnimator(View view, Interpolator interpolator,
-	                                        Property<View, Float> property, float from, float to) {
-		Animator animator = ObjectAnimator.ofFloat(view, property, from, to);
-		animator.setInterpolator(interpolator);
-		return animator;
-	}
-
-	private Animator getCurveXYAnimator(View view, final PointF pFrom, final PointF pTo, boolean isCurveX) {
-		AnimatorSet animatorSet = new AnimatorSet();
-
-		Interpolator
-				xInterpolator = new AccelerateInterpolator(1.5f),
-				yInterpolator = new DecelerateInterpolator(0.7f);
-		if (isCurveX) {
-			Interpolator temp;
-			temp = xInterpolator;
-			//noinspection SuspiciousNameCombination
-			xInterpolator = yInterpolator;
-			yInterpolator = temp;
-		}
-
-		Animator xAnimator = getTranslationAnimator(view, xInterpolator, View.X, pFrom.x, pTo.x);
-		Animator yAnimator = getTranslationAnimator(view, yInterpolator, View.Y, pFrom.y, pTo.y);
-		animatorSet.playTogether(xAnimator, yAnimator);
-		return animatorSet;
-	}*/
-
-	AnimatorSet together(Animator... animators) {
-		AnimatorSet animatorSet = new AnimatorSet();
-		animatorSet.playTogether(animators);
-		return animatorSet;
-	}
-
-	AnimatorSet sequentially(Animator... animators) {
-		AnimatorSet animatorSet = new AnimatorSet();
-		animatorSet.playSequentially(animators);
-		return animatorSet;
-	}
+	//endregion
 }

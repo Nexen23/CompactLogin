@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 	<dimen name="anchor_force_center">-1000dp</dimen>
-	<!--<dimen name="z_force_above">1000dp</dimen>-->
 
 	<dimen name="card_corner_radius">12dp</dimen>
 	<dimen name="card_elevation">6dp</dimen>

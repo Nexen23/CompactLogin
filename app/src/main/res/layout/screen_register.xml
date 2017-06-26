@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<alex.loginanimation.SizedCardView
+<alex.loginanimation.widget.SizedCardView
 	android:id="@+id/cv_register"
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -117,4 +117,4 @@
 
 	</RelativeLayout>
 
-</alex.loginanimation.SizedCardView>
+</alex.loginanimation.widget.SizedCardView>
